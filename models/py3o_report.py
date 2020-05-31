@@ -15,6 +15,7 @@ import tempfile
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from odoo import api, fields, models, tools, _
+from odoo.exceptions import UserError
 from ._py3o_parser_context import Py3oParserContext
 from odoo.tools.misc import find_in_path
 
@@ -220,7 +221,7 @@ class Py3oReport(models.TransientModel):
         """
         self.ensure_one()
         result_fd, result_path = tempfile.mkstemp(
-            suffix='.ods', prefix='p3o-report-tmp-')
+            suffix='.ods', prefix='report.py3o.tmp.')
         tmpl_data = self.get_template(model_instance)
 
         in_stream = BytesIO(tmpl_data)
@@ -247,11 +248,29 @@ class Py3oReport(models.TransientModel):
                 result_path, model_instance, data,
             )
             logger.debug('Running command %s', command)
-            output = subprocess.check_output(
-                command, cwd=os.path.dirname(result_path),
-            )
-            logger.debug('Output was %s', output)
-            # self._cleanup_tempfiles([result_path])
+            # output = subprocess.check_output(
+            #     command, cwd=os.path.dirname(result_path),
+            # )
+            try:
+                process = subprocess.Popen(
+                    command, stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE, cwd=os.path.dirname(result_path))
+                out, err = process.communicate()
+                if process.returncode not in [0, 1]:
+                    if process.returncode == -11:
+                        message = _(
+                            'Py3o failed (error code: %s). Memory limit too '
+                            'low or maximum file number of subprocess '
+                            'reached. Message : %s')
+                    else:
+                        message =\
+                            _('Py3o failed (error code: %s). Message: %s')
+                    raise UserError(
+                        message % (str(process.returncode), err[-1000:]))
+            except:
+                raise
+            logger.debug('Output was %s', out)
+            self._cleanup_tempfiles([result_path])
             result_path, result_filename = os.path.split(result_path)
             result_path = os.path.join(
                 result_path, '%s.%s' % (

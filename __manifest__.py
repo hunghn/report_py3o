@@ -9,7 +9,7 @@
     'license': 'AGPL-3',
     'author': 'XCG Consulting,'
               'ACSONE SA/NV,'
-              'Odoo Community Association (OCA)',
+              'Odoo Community Association (OCA),'
               'Hung Huynh Ngoc (hunghn.qna@gmail.com)',
     'website': 'https://github.com/OCA/reporting-engine',
     'depends': ['web'],
@@ -19,12 +19,14 @@
                    'PyPDF2']
     },
     'data': [
-        'demo/report_py3o.xml',
         'security/ir.model.access.csv',
         'views/ir_actions_report.xml',
         'views/menu.xml',
         'views/py3o_template.xml',
         'views/report_py3o.xml',
+    ],
+    'demo': [
+        'demo/report_py3o.xml',
     ],
     'installable': True,
 }

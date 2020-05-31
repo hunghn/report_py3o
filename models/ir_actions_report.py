@@ -52,7 +52,8 @@ class IrActionsReport(models.Model):
         )
     py3o_filetype = fields.Selection(
         selection="_get_py3o_filetypes",
-        string="Output Format")
+        string="Output Format",
+        default=lambda self: self._default_py3o_filetypes())
     is_py3o_native_format = fields.Boolean(
         compute='_compute_is_py3o_native_format'
     )
@@ -114,6 +115,18 @@ class IrActionsReport(models.Model):
         except IOError:
             lo_bin = None
         return lo_bin
+
+    @api.model
+    def _default_py3o_filetypes(self):
+        formats = Formats()
+        names = formats.get_known_format_names()
+        selections = []
+        for name in names:
+            description = name
+            if formats.get_format(name).native:
+                description = description + " " + _("(Native)")
+            selections.append((name, description))
+        return selections[0][0]
 
     @api.depends("report_type", "py3o_filetype")
     @api.multi
